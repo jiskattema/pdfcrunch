@@ -1,0 +1,55 @@
+#!/bin/bash
+
+if [[ x"$1" == x'-h' || x"$1" == x'--help' || x"$1" == x ]]; then
+  echo "Usage: pdfcrunch.sh INPUT [OUTPUT]"
+  echo "Reduce the size of a PDF by reducing its DPI"
+  echo
+  echo "Arguments:"
+  echo "INPUT pdf file to reduce in size"
+  echo "OUTPUT optional. output filename; defaults to INPUT_crunched.pdf"
+  echo
+  exit 2
+fi
+
+input=$1
+
+if [[ ! -e "${input}" ]]; then
+  (>&2 echo "Cannot find input file ${input}")
+  exit 1
+fi
+
+output=$2
+
+if [[ x"$2" == x ]]; then
+  output="${input%%.pdf}_crunched.pdf"
+fi
+
+
+# remember directory
+dir=`pwd`
+
+
+# make temp dir
+tmp=/tmp/`basename $0`.$$
+mkdir "$tmp"
+
+
+# work on it..
+cp "$input" "$tmp"
+cd $tmp
+
+pdftoppm "$input" page
+for i in *ppm; do
+    convert -quality 40 $i ${i%%.ppm}.jpg
+done
+
+convert *jpg "${output}"
+cp "${output}" "${dir}"
+
+
+# clean up tmp
+rm -rf "$tmp"
+
+
+# put things back
+cd "${dir}"
